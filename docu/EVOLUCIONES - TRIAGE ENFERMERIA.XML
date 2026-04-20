@@ -1,0 +1,132 @@
+<root>
+	<nombre>TRIAGE GUARDIA EMERGENCIAS</nombre>
+	<grupo>EVOLUCIONES PACIENTES</grupo>
+	<perfiles>
+		<valor>1</valor>    <!-- Perfil de Administrador -->
+		<valor>7</valor>    <!-- Perfil de Recupero (inversión en salud) -->
+		<valor>8</valor>    <!-- Perfil de Enfermería -->
+		<valor>10</valor>   <!-- Perfil de Estadisticas -->
+		<valor>23</valor>   <!-- Perfil de Enfermería con Turnos Espontaneo -->
+		<valor>26</valor>   <!-- Perfil de Enfermeria AUDITORIA -->
+		<valor>27</valor>	<!-- Perfil de Enfermeria 2 AUDITORIA -->
+		<valor>29</valor>   <!-- Perfil de MEDICO + AGENDA FULL + ESTADISTICAS -->
+		<valor>35</valor>   <!-- Perfil de Auditoria Medica -->
+		<valor>37</valor>   <!-- Perfil de Auditoria Consejo -->
+		<valor>38</valor>   <!-- Perfil de AUDITORIA Secretaria Dirección -->
+		<valor>39</valor>   <!-- Perfil de Auditoria Administrativa -->
+		<valor>46</valor>   <!-- Perfil de 	Exportación - reportes - ver Evoluciones y agendas -->
+		<valor>50</valor>	<!-- Perfil de 	MEDICO COORDINADORES (Con Reportes) -->
+		<valor>55</valor>	<!-- Perfil de 	Admisión - Gestión de Agendas Y EXPORTACION DATOS -->
+	</perfiles>
+	<sql> 
+		SELECT
+			 DTM_Evoluciones.IdEvolucion AS ID_Evolucion
+			,FORMAT(DTM_Evoluciones.Fecha, 'yyyy/MM/dd') AS DiaAtencion
+			,FORMAT(DTM_Evoluciones.Fecha, 'HH:mm') AS 'Hora Atencion'
+			,DTM_Contactos.NombreCompleto AS Paciente
+			,AFIP_TiposDeDocumentos.Nombre AS Tipo_Doc
+			,DTM_Contactos.Doc_Numero AS Num_Doc
+			,DTR_Nacionalidades.Nombre AS Nacion
+			,AFIP_Provincias.Nombre AS Provincia
+			,DTM_Contactos.Dom_Localidad AS Localidad
+			------------------------
+			, CASE DTM_Contactos.IdSexo 
+				WHEN 1 THEN 'Hombre' 
+				WHEN 2 THEN 'Mujer' 
+				ELSE 'No Binario' 
+			  END AS Sexo
+			-----------------------------------
+			,FORMAT(DTM_Contactos.FechaNac, 'yyyy/MM/dd') AS Nacimiento
+			-----------------------------------
+			,YEAR(GETDATE()) - YEAR(DTM_Contactos.FechaNac) AS Edad
+			----------------------------------
+			,CASE
+				WHEN DATEDIFF(MONTH, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 0 AND 11 THEN '0-12 meses'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 1 AND 4 THEN '1-4 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 5 AND 9 THEN '5-9 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 10 AND 14 THEN '10-14 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 15 AND 19 THEN '15-19 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 20 AND 34 THEN '20-34 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 35 AND 49 THEN '35-49 Años'
+				WHEN DATEDIFF(YEAR, DTM_Contactos.FechaNac, GETDATE()) BETWEEN 50 AND 64 THEN '50-64 Años'
+				ELSE '65+ Años'
+			END AS grupoEdad
+			----------------------------------
+			,DTR_Coberturas.Nombre AS Ob_Soc
+			,App_Usuarios.NombreApellido AS PROFESIONAL
+
+
+				-- DESACTIVADO TEMPORALMENTE "MOTIVO INGRESO" POR TENER RTF DENTRO DE EvolucionXML
+				
+		 --   ,XMLData.EvolucionXML.value('(//control[titulo="Motivo de ingreso"]/value)[1]', 'VARCHAR(MAX)') AS Motivo_INGRESO
+			,XMLData.EvolucionXML.value('(//control[titulo="Escala NEWs"]/value)[1]', 'VARCHAR(MAX)') AS NEWS
+			,XMLData.EvolucionXML.value('(//control[titulo="Destino interno"]/value)[1]', 'VARCHAR(MAX)') AS DESTINO
+
+			,DTM_Contactos.IdContacto AS Id_Paciente
+			,DTM_Contactos.IdGenero AS ID_Genero
+			,DTR_Coberturas.Codigo As ID_Cob
+			,DTM_Contactos.Doc_IdTipo AS ID_TopoDoc
+			,DTM_Contactos.IdNacionalidad AS ID_Nacion
+			,DTM_Contactos.Dom_IdProvincia AS ID_PROV
+
+				
+				
+		FROM 
+			DTM_Evoluciones
+
+				left JOIN DTM_Contactos ON DTM_Evoluciones.IdContacto = DTM_Contactos.IdContacto
+				left JOIN DTR_Coberturas ON DTM_Contactos.Cob_IdCobretura = DTR_Coberturas.Codigo
+				left JOIN DTR_Especialidades ON DTM_Evoluciones.IdEspecialidad = DTR_Especialidades.Codigo
+				left JOIN App_Usuarios ON DTM_Evoluciones.IdUsAlta = App_Usuarios.IdUsuario
+				left JOIN DTR_Nacionalidades ON DTM_Contactos.IdNacionalidad = DTR_Nacionalidades.Codigo
+				left JOIN AFIP_TiposDeDocumentos ON DTM_Contactos.Doc_IdTipo = AFIP_TiposDeDocumentos.Codigo
+				left JOIN AFIP_Provincias ON DTM_Contactos.Dom_IdProvincia = AFIP_Provincias.Codigo
+
+			
+		CROSS APPLY 
+			(SELECT CAST(EvolucionXML AS XML) AS EvolucionXML) AS XMLData
+
+
+				-- TRIAGE NEWS ENFERMERIA
+		WHERE		DTM_Evoluciones.IdTipoEvolucion = 90
+
+	</sql>
+	<sqlexport>
+		SELECT * FROM
+		%SQLDATA%
+		%PARAMETROS%
+		ORDER BY DiaAtencion
+	</sqlexport>
+	
+	<parametros>
+		<parametro>
+			<etiqueta>(**SELECCIONAR MAXIMO 1 MES**) FECHA DE ATENCION (desde-hasta)</etiqueta>
+			<tipo>fecha_rango</tipo>
+			<fechainicio>primerodemesactual</fechainicio>
+			<fechafin>hoy</fechafin>
+			<filtro>DiaAtencion</filtro>
+		</parametro>
+
+		<parametro>
+			<etiqueta>Cobertura</etiqueta>
+			<tipo>busqueda</tipo>
+			<sql>
+				SELECT Codigo, Nombre FROM DTR_Coberturas ORDER BY Nombre</sql>
+			<valor>Codigo</valor>
+			<nombre>Nombre</nombre>
+			<marcador>&lt;TODOS&gt;</marcador>
+			<filtro>ID_Cob</filtro>
+		</parametro>
+		<parametro>
+			<etiqueta>Paciente (Apellido, Nombre o Num Documento)</etiqueta>
+			<tipo>busqueda</tipo>
+			<sql> SELECT IdContacto,NombreCompleto+', Docu. Num ' + CAST(Doc_Numero AS nvarchar)As Paciente from  DTM_Contactos </sql>
+			<valor>idContacto</valor>
+			<nombre>Paciente</nombre> 
+			<marcador>&lt;TODOS&gt;</marcador>
+			<filtro>Id_Paciente</filtro>
+		</parametro>
+
+	</parametros>
+
+</root>

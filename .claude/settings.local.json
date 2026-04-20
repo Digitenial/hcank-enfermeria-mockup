@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__f848eeef-e276-456b-aa28-00c2f36dcf2c__notion-search",
+      "mcp__f848eeef-e276-456b-aa28-00c2f36dcf2c__notion-fetch",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(python3)",
+      "mcp__f848eeef-e276-456b-aa28-00c2f36dcf2c__notion-create-pages",
+      "mcp__f848eeef-e276-456b-aa28-00c2f36dcf2c__notion-update-page"
+    ]
+  }
+}
