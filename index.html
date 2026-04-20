@@ -442,11 +442,11 @@ const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggl
           <div className="flex items-center gap-2">
             <h1 className="text-slate-800 font-semibold text-base leading-tight">{title}</h1>
           </div>
-          {subtitle && <p className="text-slate-400 text-xs">{subtitle}</p>}
+          {subtitle && <p className="hidden md:block text-slate-400 text-xs">{subtitle}</p>}
         </div>
       </div>
       <div className="flex items-center gap-3">
-        <span className="text-slate-400 text-sm font-mono tabular-nums">
+        <span className="hidden md:inline text-slate-400 text-sm font-mono tabular-nums">
           {now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </span>
         <div className="relative">
@@ -461,7 +461,8 @@ const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggl
             <span className="text-sky-700 text-xs font-medium">{user.title} {user.name.split(',')[0]}</span>
           </div>
         )}
-        <div className="flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">
+        <div className="md:hidden w-2.5 h-2.5 rounded-full bg-emerald-400 ring-2 ring-emerald-100 flex-shrink-0" title="Conectado" />
+        <div className="hidden md:flex items-center gap-1.5 bg-emerald-50 border border-emerald-100 rounded-full px-2.5 py-1">
           <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
           <span className="text-emerald-700 text-xs font-medium">En línea</span>
         </div>
@@ -2245,7 +2246,7 @@ const App = () => {
   if (!user) return <Login onLogin={(u) => setUser(u)} />;
 
   const titles = {
-    dashboard: { t: `Dashboard — ${user.sector}`, s: `${user.shift} · ${PATIENTS.length} pacientes activos` },
+    dashboard: { t: user.sector, s: `${user.shift} · ${PATIENTS.length} pacientes activos` },
     patient:   { t: selectedPatient?.name || '', s: selectedPatient?.diagnosis || '' },
     handover:  { t: 'Toma de Guardia', s: `Transferencia de turno · ${user.shift}` },
     medical:   { t: 'Vista Médico', s: 'Resumen de enfermería para toma de decisión clínica' },
