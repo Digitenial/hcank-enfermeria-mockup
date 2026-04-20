@@ -425,7 +425,7 @@ const Sidebar = ({ view, setView, collapsed, setCollapsed, user, onLogout, mobil
 
 // ===================== HEADER =====================
 
-const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggle }) => {
+const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggle, onAlertsToggle }) => {
   const [now, setNow] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   const crit = alerts.filter(a => a.type === 'critical').length;
@@ -449,12 +449,12 @@ const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggl
         <span className="text-slate-400 text-sm font-mono tabular-nums">
           {now.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
         </span>
-        {crit > 0 && (
-          <div className="relative">
-            <button className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-sm">🔔</button>
+        <div className="relative">
+          <button onClick={onAlertsToggle} className="w-8 h-8 rounded-full bg-red-50 border border-red-200 flex items-center justify-center text-sm">🔔</button>
+          {crit > 0 && (
             <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">{crit}</span>
-          </div>
-        )}
+          )}
+        </div>
         {user && (
           <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-100 rounded-full px-2.5 py-1">
             <span className="text-sm">{user.icon}</span>
@@ -523,7 +523,7 @@ const PatientCard = ({ patient, onClick }) => {
 
 // ===================== DASHBOARD =====================
 
-const Dashboard = ({ patients, alerts, setView, setSelectedPatient, user }) => {
+const Dashboard = ({ patients, alerts, setView, setSelectedPatient, user, alertsOpen, onAlertsClose }) => {
   const [filter, setFilter] = useState('all');
   const filtered = filter === 'all' ? patients : patients.filter(p => p.status === filter);
   const open = (p) => { setSelectedPatient(p); setView('patient'); };
@@ -566,10 +566,16 @@ const Dashboard = ({ patients, alerts, setView, setSelectedPatient, user }) => {
         </div>
       </div>
 
+      {/* Alerts panel backdrop — mobile only */}
+      {alertsOpen && (
+        <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={onAlertsClose} />
+      )}
+
       {/* Alerts panel */}
-      <div className="w-64 flex-shrink-0 bg-white border-l border-slate-100 flex flex-col">
-        <div className="px-4 py-3 border-b border-slate-100">
+      <div className={`bg-white flex flex-col border-l border-slate-100 fixed inset-y-0 right-0 z-30 w-72 transition-transform duration-300 ${alertsOpen ? 'translate-x-0' : 'translate-x-full'} md:relative md:translate-x-0 md:w-64 md:flex-shrink-0 md:z-auto`}>
+        <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
           <h3 className="font-semibold text-slate-700 text-sm">🔔 Alertas activas</h3>
+          <button onClick={onAlertsClose} className="md:hidden w-6 h-6 flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded text-xs">✕</button>
         </div>
         <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
           {alerts.map(a => (
@@ -2234,6 +2240,7 @@ const App = () => {
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
 
   if (!user) return <Login onLogin={(u) => setUser(u)} />;
 
@@ -2253,8 +2260,8 @@ const App = () => {
       <Sidebar view={view} setView={(v) => { setView(v); setMobileOpen(false); }} collapsed={collapsed} setCollapsed={setCollapsed}
         user={user} onLogout={() => { setUser(null); setView('dashboard'); }} mobileOpen={mobileOpen} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header title={cur.t} subtitle={cur.s} alerts={ALERTS_GLOBAL} setView={setView} inPatient={view === 'patient'} user={user} onMenuToggle={() => setMobileOpen(o => !o)} />
-        {view === 'dashboard' && <Dashboard patients={PATIENTS} alerts={ALERTS_GLOBAL} setView={setView} setSelectedPatient={setSelectedPatient} user={user} />}
+        <Header title={cur.t} subtitle={cur.s} alerts={ALERTS_GLOBAL} setView={setView} inPatient={view === 'patient'} user={user} onMenuToggle={() => setMobileOpen(o => !o)} onAlertsToggle={() => setAlertsOpen(o => !o)} />
+        {view === 'dashboard' && <Dashboard patients={PATIENTS} alerts={ALERTS_GLOBAL} setView={setView} setSelectedPatient={setSelectedPatient} user={user} alertsOpen={alertsOpen} onAlertsClose={() => setAlertsOpen(false)} />}
         {view === 'patient' && selectedPatient && <PatientDetail patient={selectedPatient} patients={PATIENTS} setSelectedPatient={setSelectedPatient} setView={setView} user={user} />}
         {view === 'handover' && <Handover patients={PATIENTS} />}
         {view === 'medical'  && <MedicalView patients={PATIENTS} />}
