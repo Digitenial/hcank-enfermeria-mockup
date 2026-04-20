@@ -536,7 +536,6 @@ const Dashboard = ({ patients, alerts, setView, setSelectedPatient, user, alerts
       <div className="flex-1 overflow-y-auto scrollbar-thin p-5">
         <div className="mb-4">
           <h2 className="text-slate-800 font-semibold text-lg">{greeting}, {user?.title} {user?.name?.split(',')[0]} 👋</h2>
-          <p className="text-slate-400 text-sm">{user?.shift} · {user?.sector} · {patients.length} pacientes activos</p>
         </div>
 
         <div className="grid grid-cols-4 gap-3 mb-5">
