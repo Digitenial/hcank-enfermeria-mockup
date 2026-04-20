@@ -371,14 +371,14 @@ const Login = ({ onLogin }) => {
 
 // ===================== SIDEBAR =====================
 
-const Sidebar = ({ view, setView, collapsed, setCollapsed, user, onLogout }) => {
+const Sidebar = ({ view, setView, collapsed, setCollapsed, user, onLogout, mobileOpen }) => {
   const items = [
     { id: 'dashboard', icon: '🏠', label: 'Dashboard' },
     { id: 'handover',  icon: '🔄', label: 'Toma de Guardia' },
     { id: 'medical',   icon: '👨‍⚕️', label: 'Vista Médico' },
   ];
   return (
-    <div className={`bg-slate-900 flex flex-col transition-all duration-250 ${collapsed ? 'w-16' : 'w-52'} flex-shrink-0 h-full`}>
+    <div className={`bg-slate-900 flex flex-col h-full flex-shrink-0 fixed inset-y-0 left-0 z-30 w-64 transition-transform duration-300 ${mobileOpen ? 'translate-x-0' : '-translate-x-full'} md:relative md:translate-x-0 md:transition-all md:duration-250 ${collapsed ? 'md:w-16' : 'md:w-52'}`}>
       <div className="p-4 flex items-center gap-3 border-b border-slate-700/50 h-14">
         <span className="text-xl flex-shrink-0">🏥</span>
         {!collapsed && <span className="text-white font-bold text-sm truncate">EnferApp</span>}
@@ -410,7 +410,7 @@ const Sidebar = ({ view, setView, collapsed, setCollapsed, user, onLogout }) => 
             </div>
           </div>
         )}
-        <div className="flex gap-1">
+        <div className="hidden md:flex gap-1">
           <button onClick={() => setCollapsed(c => !c)}
             className="flex-1 py-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-all text-xs flex items-center justify-center gap-1">
             {collapsed ? '→' : '← Colapsar'}
@@ -425,20 +425,25 @@ const Sidebar = ({ view, setView, collapsed, setCollapsed, user, onLogout }) => 
 
 // ===================== HEADER =====================
 
-const Header = ({ title, subtitle, alerts, setView, inPatient, user }) => {
+const Header = ({ title, subtitle, alerts, setView, inPatient, user, onMenuToggle }) => {
   const [now, setNow] = useState(new Date());
   useEffect(() => { const t = setInterval(() => setNow(new Date()), 1000); return () => clearInterval(t); }, []);
   const crit = alerts.filter(a => a.type === 'critical').length;
   return (
     <div className="bg-white border-b border-slate-100 px-6 h-14 flex items-center justify-between flex-shrink-0">
-      <div>
-        {inPatient && (
-          <button onClick={() => setView('dashboard')} className="text-sky-600 text-xs hover:underline block mb-0.5">← Dashboard</button>
-        )}
-        <div className="flex items-center gap-2">
-          <h1 className="text-slate-800 font-semibold text-base leading-tight">{title}</h1>
+      <div className="flex items-center gap-3">
+        <button onClick={onMenuToggle}
+          className="md:hidden w-8 h-8 flex items-center justify-center text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-lg transition-all flex-shrink-0"
+          aria-label="Abrir menú">☰</button>
+        <div>
+          {inPatient && (
+            <button onClick={() => setView('dashboard')} className="text-sky-600 text-xs hover:underline block mb-0.5">← Dashboard</button>
+          )}
+          <div className="flex items-center gap-2">
+            <h1 className="text-slate-800 font-semibold text-base leading-tight">{title}</h1>
+          </div>
+          {subtitle && <p className="text-slate-400 text-xs">{subtitle}</p>}
         </div>
-        {subtitle && <p className="text-slate-400 text-xs">{subtitle}</p>}
       </div>
       <div className="flex items-center gap-3">
         <span className="text-slate-400 text-sm font-mono tabular-nums">
@@ -2228,6 +2233,7 @@ const App = () => {
   const [view, setView] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   if (!user) return <Login onLogin={(u) => setUser(u)} />;
 
@@ -2241,10 +2247,13 @@ const App = () => {
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <Sidebar view={view} setView={(v) => { setView(v); }} collapsed={collapsed} setCollapsed={setCollapsed}
-        user={user} onLogout={() => { setUser(null); setView('dashboard'); }} />
+      {mobileOpen && (
+        <div className="fixed inset-0 bg-black/50 z-20 md:hidden" onClick={() => setMobileOpen(false)} />
+      )}
+      <Sidebar view={view} setView={(v) => { setView(v); setMobileOpen(false); }} collapsed={collapsed} setCollapsed={setCollapsed}
+        user={user} onLogout={() => { setUser(null); setView('dashboard'); }} mobileOpen={mobileOpen} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
-        <Header title={cur.t} subtitle={cur.s} alerts={ALERTS_GLOBAL} setView={setView} inPatient={view === 'patient'} user={user} />
+        <Header title={cur.t} subtitle={cur.s} alerts={ALERTS_GLOBAL} setView={setView} inPatient={view === 'patient'} user={user} onMenuToggle={() => setMobileOpen(o => !o)} />
         {view === 'dashboard' && <Dashboard patients={PATIENTS} alerts={ALERTS_GLOBAL} setView={setView} setSelectedPatient={setSelectedPatient} user={user} />}
         {view === 'patient' && selectedPatient && <PatientDetail patient={selectedPatient} patients={PATIENTS} setSelectedPatient={setSelectedPatient} setView={setView} user={user} />}
         {view === 'handover' && <Handover patients={PATIENTS} />}
